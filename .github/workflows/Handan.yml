@@ -1,0 +1,52 @@
+name: Handan APK Derleyici
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+    - name: Depoyu Kopyala
+      uses: actions/checkout@v4
+
+    - name: Node.js Kurulumu
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Cordova CLI ve Capacitor Kurulumu
+      run: |
+        npm install -g cordova
+        cordova telemetry off
+
+    - name: Cordova Projesi Olusturma
+      run: |
+        cordova create app com.handan.yarisapk YarisOyunu
+        cd app
+        cordova platform add android --nosave
+
+        # index.html dosyasini www klasorune tasiyalim
+        if [ -f "../index.html" ]; then
+          cp ../index.html www/index.html
+          echo "index.html basariyla kopyalandi!"
+        else
+          echo "Hata: index.html bulunamadi!"
+          exit 1
+        fi
+
+    - name: APK Derleme Islemi
+      run: |
+        cd app
+        cordova build android --release --no-telemetry
+
+    - name: APK Dosyasini Kaydet
+      uses: actions/upload-artifact@v4
+      with:
+        name: Handan-Yaris-APK
+        path: app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
+        
